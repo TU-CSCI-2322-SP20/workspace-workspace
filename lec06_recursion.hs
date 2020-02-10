@@ -72,4 +72,26 @@ myMaximum (x:xs) = traceShow (x,xs) $
 --[7,7,7,7] -> 4
 --
 myReverse [] = []
-myReverse (x:xs) = (myReverse xs) ++ [x]
+myReverse (x:xs) = (traceShowId $ myReverse xs) ++ [x]
+
+myReverse2 lst = quickReverse lst [] 
+ where quickReverse :: Show a => [a] -> [a] -> [a]
+       quickReverse [] result = result
+       quickReverse (x:xs) result = quickReverse xs (x:(traceShowId result))
+
+append :: a -> [a] -> [a]
+append n [] = [n]
+append n (x:xs) = x:(append n xs) 
+
+gap lst = maximum lst - minimum lst
+gap :: [Int] -> Int
+gap [] = error "can't compute gap of an empty lst"
+gap (x:xs) = aux xs x x
+  where aux :: [Int] -> Int -> Int -> Int
+        aux [] lrg sml = lrg - sml
+        aux (x:xs) lrg sml  
+              | x > lrg   = aux xs x sml
+              | x < sml   = aux xs lrg x
+              | otherwise = aux xs lrg sml
+
+

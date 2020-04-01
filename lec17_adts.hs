@@ -26,6 +26,15 @@ readAsMPS :: Velocity -> Double
 readAsMPS (FeetPerSecond x) = x * 0.3048
 readAsMPS (MetersPerSecond x) = x
 
+equalVelocity :: Velocity -> Velocity -> Bool
+equalVelocity (MetersPerSecond x) (FeetPerSecond y) = y * 0.3048 == x 
+equalVelocity (FeetPerSecond x) (MetersPerSecond y) = x * 0.3048 == y 
+equalVelocity (FeetPerSecond x) (FeetPerSecond y) = x == y 
+equalVelocity (MetersPerSecond x) (MetersPerSecond y) = x == y 
+
+equalVelocity2 :: Velocity -> Velocity -> Bool
+equalVelocity2 x y = readAsMps x == readAsMps y
+
 --A circle is a radius, an x coordinate and a y coordinate for the center
 --A rectangle is the lower-left and upper-right  points, stored as x0 y0 x1 y1
 type Point = (Double, Double)

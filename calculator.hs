@@ -20,6 +20,7 @@
 --option 2: to have a sub-type for operator, and a single token constructor
 data Operator = PlusOp | SubOp | DivOp | MultOp deriving (Show, Eq)
 data Token = NumT Double | OpT Operator deriving (Show, Eq)
+
 data Expr = NumE Double | OpE Operator Expr Expr deriving Show
 type Value = Double
 
@@ -37,7 +38,7 @@ lexer str = map lexWord (words str)
 --
 --data List = Empty | Cons Int List
 
-
+expr0,expr1,expr2,expr3 :: Expr
 expr0 = NumE 4
 expr1 = OpE PlusOp (NumE 4) (NumE 7)
 --   +
@@ -59,3 +60,6 @@ expr3 = OpE SubOp (OpE PlusOp (NumE 7.0)
                   )
                   (NumE 2)
 
+
+eval :: Expr -> Value -- value is a Double
+eval = undefined

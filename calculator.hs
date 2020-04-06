@@ -65,6 +65,9 @@ expr3 = OpE SubOp (OpE PlusOp (NumE 7.0)
                   )
                   (NumE 2)
 
+parse :: [Token] -> Expr
+parse = undefined
+
 eval :: Expr -> Value -- value is a Double
 eval (NumE val) = val
 eval (OpE PlusOp e1 e2) = (eval e1) + (eval e2)

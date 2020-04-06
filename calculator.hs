@@ -39,12 +39,16 @@ lexer str = map lexWord (words str)
 --data List = Empty | Cons Int List
 
 expr0,expr1,expr2,expr3 :: Expr
+toks0 = [NumT 4]
 expr0 = NumE 4
+
+toks1 = [OpT PlusOp, NumT 4, NumT 7]
 expr1 = OpE PlusOp (NumE 4) (NumE 7)
 --   +
 -- 7   -
 --    3 2
 --
+toks2 = [OpT PlusOp, NumT 7.0, OpT SubOp, NumT 3.0, NumT 2.0]
 expr2 = OpE PlusOp (NumE 7.0) 
                    (OpE SubOp (NumE 3.0) 
                               (NumE 2.0)
@@ -55,11 +59,25 @@ expr2 = OpE PlusOp (NumE 7.0)
 --  +   2
 -- 7 3
 
+toks3 = [OpT SubOp, OpT PlusOp, NumT 7.0, NumT 3.0, NumT 2.0]
 expr3 = OpE SubOp (OpE PlusOp (NumE 7.0) 
                               (NumE 3.0)
                   )
                   (NumE 2)
 
-
 eval :: Expr -> Value -- value is a Double
-eval = undefined
+eval (NumE val) = val
+eval (OpE PlusOp e1 e2) = (eval e1) + (eval e2)
+eval (OpE SubOp e1 e2) = (eval e1) - (eval e2)
+eval (OpE MultOp e1 e2) = (eval e1) * (eval e2)
+eval (OpE DivOp e1 e2) = (eval e1) / (eval e2)
+
+eval2 :: Expr -> Value -- value is a Double
+eval2 (NumE val) = val
+eval2 (OpE oper e1 e2) = (evalOp oper) (eval e1) (eval e2)
+
+evalOp :: Operator -> (Double -> Double -> Double)
+evalOp PlusOp = (+)
+evalOp SubOp = (-)
+evalOp MultOp = (*)
+evalOp DivOp = (/)

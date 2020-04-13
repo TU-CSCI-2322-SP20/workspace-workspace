@@ -1,3 +1,4 @@
+import Debug.Trace
 --Calculator: 
 --Go from "+ 7 3" to 10
 --"+ 7 * 2 4" to 7 + (2*4) to 15
@@ -22,17 +23,25 @@ data Operator = PlusOp | SubOp | DivOp | MultOp deriving (Show, Eq)
 data Token = NumT Double | OpT Operator deriving (Show, Eq)
 
 data Expr = NumE Double | OpE Operator Expr Expr deriving Show
+
+size :: Expr -> Int
+size (NumE _) = 1
+size (OpE op l r) = 1 + (size l) + (size r)
+
 type Value = Double
 
-lexWord :: String -> Token
-lexWord "+" = OpT PlusOp
-lexWord "-" = OpT SubOp
-lexWord "*" = OpT MultOp
-lexWord "/" = OpT DivOp
-lexWord x = NumT (read x :: Double)
+lexWord :: String -> Maybe Token
+lexWord "+" = Just $ OpT PlusOp
+lexWord "-" = Just $ OpT SubOp
+lexWord "*" = Just $ OpT MultOp
+lexWord "/" = Just $ OpT DivOp
+lexWord x = if all (`elem` "0123456789.") x
+            then Just $ NumT (read x :: Double)
+            else Nothing
 
-lexer :: String -> [Token]
-lexer str = map lexWord (words str)
+lexer :: String -> Maybe [Token]
+lexer str = let mtoks = map lexWord (words str)
+            in sequence mtoks
 -- 5 * 0
 -- 0
 --
@@ -65,8 +74,47 @@ expr3 = OpE SubOp (OpE PlusOp (NumE 7.0)
                   )
                   (NumE 2)
 
+--data Maybe a = Just a | Nothing
+
+parse :: [Token] -> Maybe Expr
+parse toks = fmap fst $ aux toks
+  {-case aux toks of
+                Just (expr, leftover) -> Just expr
+                Nothing -> Nothing-}
+  where aux :: [Token] -> Maybe (Expr, [Token])
+        aux [] = Nothing
+        aux (NumT x:ts) = Just (NumE x, ts)
+        aux (OpT op:ts) = 
+          case aux ts of
+              Nothing -> Nothing
+              Just (leftE, leftOver) -> 
+                  case aux leftOver of
+                      Nothing -> Nothing
+                      Just (rightE, leftLeftOver) -> 
+                        let finalE =  OpE op leftE rightE 
+                        in Just (finalE, leftLeftOver)
+
+
+readExpr :: String -> Maybe Expr
+readExpr str =  --fmap parse (lexer str)
+  case lexer str of
+      Just toks -> parse toks
+      Nothing -> Nothing
+{- verbose version 
 parse :: [Token] -> Expr
-parse = undefined
+parse toks = fst $ aux toks
+  where aux :: [Token] -> (Expr, [Token])
+        aux (NumT x:ts) = traceShowId (NumE x, ts)
+        aux (OpT op:ts) = 
+          let (leftE, leftOver) = aux ts
+              (rightE, leftLeftOver) = aux leftOver
+              finalE =  OpE op leftE rightE
+          in trace ("Saw " ++ show op) $
+             trace ("Reading left from " ++ show ts) $
+             trace ("Reading right from " ++ show leftOver) $
+             trace ("Returning " ++ show (finalE, leftLeftOver)) $
+           (finalE, leftLeftOver)
+           -}
 
 eval :: Expr -> Value -- value is a Double
 eval (NumE val) = val

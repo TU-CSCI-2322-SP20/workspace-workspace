@@ -181,7 +181,11 @@ numCorrect = undefined
 -- be sufficient.
 
 -- Define an algebraic data type for decision trees.
-data DTree = UnfinishedTree deriving Show
+data DTree = Decision Edible 
+           | Inspect Attribute DTree DTree deriving Show
+           --left child is "has", right is "hasnot"
+
+sampleTree = Inspect (StalkColor Purple) (Decision NoNom) (Decision Nom)
 
 -- Given a list of attributes and a list of observations, build a decision tree.
 --  * If all the observations have the same edibility, you can safely make an end node: there is no

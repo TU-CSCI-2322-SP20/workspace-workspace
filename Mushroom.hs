@@ -47,9 +47,9 @@ data Attribute = StalkC Color | CapC Color | SporeC Color
                | BulbousStalk | ClubStalk | MissingStalk
                | BroadGill | NarrowGill 
                | AlmondOdor | AniseOdor | FoulOdor | NoOdor | MustyOdor
-              deriving (Show, Eq)
+              deriving (Show, Eq, Ord)
 
-data Color = Brown | Green | Purple | White | Yellow deriving (Show, Eq)
+data Color = Brown | Green | Purple | White | Yellow deriving (Show, Eq, Ord)
 
 -- Make a list of all possible attributes. There should be 28 different attributes.
 allAttributes :: [Attribute]
@@ -169,8 +169,32 @@ readObservationFile contents =
 --4) Important: if either set is empty, no information is gained by looking at the attribute. Return 0.
 --
 --You may find the built-in partition function useful.
+
+--numCorrect computes how much information about edibility can be gained by checking a specific
+--attribute. It takes a single attribute and a list of observations, and answers the question:
+--"If all we had to distinguish edibility was this attribute, how many mushrooms would we label
+--correctly?"
+--Split the observations into the those with the attribute, and those without the attribute. 
+--One of these sets will have a higher percentage of edible mushrooms. If mushrooms in that set
+--are assumed to be edible, and those in the other set are assumed to be inedible, return the number
+--of correct guesses.
+--Importantly: if either set is empty, return 0.
 numCorrect :: Attribute -> [Observation] -> Int
-numCorrect = undefined 
+numCorrect a obs = let (has, hasnot) = splitBy obs a
+                       (ew,pw) = edibility has --edible with, poison with
+                       (en,pn) = edibility hasnot --edible notwith, poison notwith
+                   in if null has || null hasnot then 0
+                      else if ratioOfCount (ew, pw) > ratioOfCount (en, pn)
+                           then ew + pn 
+                           else pw + en
+
+edibility :: [Observation] -> (Int, Int) 
+edibility lst = (length n, length nn)
+  where (n,nn) = partition (\(m,e) -> e==Nom) lst
+
+splitBy ::  [Observation] -> Attribute -> ([Observation], [Observation])
+splitBy obs attr = let hasAttr (m,e) = attr `elem` m 
+                   in partition hasAttr obs
 
 -- A decision tree is a binary tree that stores the likelihood of a mushroom being edible based on
 -- its attributes.  Decision nodes are labeled with an attribute and have two children, with the
@@ -185,26 +209,40 @@ data DTree = Decision Edible
            | Inspect Attribute DTree DTree deriving Show
            --left child is "has", right is "hasnot"
 
-sampleTree = Inspect (StalkColor Purple) (Decision NoNom) (Decision Nom)
+sampleTree = Inspect (StalkC Purple) (Decision NoNom) (Decision Nom)
 
--- Given a list of attributes and a list of observations, build a decision tree.
---  * If all the observations have the same edibility, you can safely make an end node: there is no
---    need to further analyze a mushroom.  
---  * If all the observations have the same attributes, you must make an end node : there is no way
---    to futher analyze a mushroom.
---  * Otherwise, go through the list of attributes and find the one that gives you the most
---    information about edibility, as measured by the number of correct guesses that can be obtained if
---    this was the only attribute used.  Then create a decision node using that attribute as a pivot.
---  * For efficiency, you can delete the pivot from the list of attributes, but it doesn't really
---    matter.
---  * You should create helper functions for this problem. 
+fancyshow tree = unlines $ aux tree 0
+      where aux (Decision r) i = [replicate i ' ' ++ "Leaf " ++ show  r]
+            aux (Inspect p l r) i = [replicate i ' ' ++ "Node " ++ show p] ++ (aux l (i+1)) ++ (aux r (i+1))
+
+
+
+
+--Given a list of attributes and a list of observations, build a decision tree.
+--If all the observations have the same edibility, you can safely make an end node: there is no need to
+--further analyze a mushroom.  If all the observations have the same attributes, you must make an
+--end node : there is no way to futher analyze a mushroom.
+--Otherwise, go through the list of attributes and find the one that gives you the most information
+--about edibility, as measured by the number of correct guesses that can be obtained if this was the
+--only attribute used.  Then create a decision node using that attribute as a pivot.
+--For efficiency, you can to delete the pivot from the list of attributes. 
+--You should create helper functions for this problem. You may find the built-in partition function
+--useful.
 buildTree :: [Attribute] -> [Observation] -> DTree
-buildTree = undefined 
+buildTree attrs obs 
+  | all (==Nom) (map snd obs) = Decision Nom
+  | all (==NoNom) (map snd obs) = Decision NoNom
+  | otherwise = 
+       let pivot = findPivot attrs obs
+           (has, hasnot) = splitBy obs pivot
+       in Inspect pivot (buildTree attrs has) (buildTree attrs hasnot)
 
 
---
--- --                                       Core Project
---
+findPivot attrs obs = 
+  let rateds = [(nc, a) | a <- attrs, let nc = numCorrect a obs, nc > 0]
+      (score, pivot) = maximum rateds
+  in pivot
+
 
 -- rateMushroom takes a mushroom, a decision tree, and a safety limit, and returns a string
 -- describing if we can eat the mushroom.  Follow the decision tree for this mushroom, and check if
